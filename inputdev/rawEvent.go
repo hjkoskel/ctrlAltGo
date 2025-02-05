@@ -68,3 +68,13 @@ func ReadInputEvent(f *os.File) (RawInputEvent, error) {
 		Code:      binary.LittleEndian.Uint16(b[18:20]),
 		Value:     binary.LittleEndian.Uint32(b[20:])}, nil
 }
+
+func ReadEventsToChan(f *os.File, out chan RawInputEvent) error {
+	for {
+		ev, err := ReadInputEvent(f)
+		if err != nil {
+			return err
+		}
+		out <- ev
+	}
+}

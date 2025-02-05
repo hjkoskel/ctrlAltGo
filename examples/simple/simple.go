@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"initializing"
 	"os"
+	"time"
 )
 
 func listDir(dirname string) error {
@@ -37,6 +38,15 @@ func listDir(dirname string) error {
 	return nil
 }
 
+func checkExampleBinDirFile() {
+	content, err := os.ReadFile("/bin/example.txt")
+	if err == nil {
+		fmt.Printf("HEY! have example file: %s\n", content)
+		return
+	}
+
+}
+
 func main() {
 	if os.Getpid() != 1 {
 		fmt.Printf("This is initramfs program. Please run this as PID1\n")
@@ -49,5 +59,43 @@ func main() {
 	ctrlaltgo.JamIfErr(errMount)
 	listDir("/dev")
 
+	for {
+		fmt.Printf("--Block devices poll---\n")
+
+		blockDevices, errBlockDevices := initializing.GetBlockDevices()
+		ctrlaltgo.JamIfErr(errBlockDevices)
+
+		// Print block device information
+		/*
+			for _, device := range blockDevices {
+				if device.IsUSB {
+					fmt.Printf("Device: %s (USB)\n", device.Name)
+				} else {
+					fmt.Printf("Device: %s\n", device.Name)
+				}
+				fmt.Printf("  Size: %d Vendor: %s Model: %s  Partitions: %v\n", device.SizeBytes, device.Vendor, device.Model, len(device.Partitions))
+				for i, part := range device.Partitions {
+					fmt.Printf("		%v:%s size:%v fstype:%s UUID:%s\n", i, part.Name, part.SizeGB, part.FSType, part.UUID)
+				}
+
+				fmt.Printf("  Is USB: %v\n", device.IsUSB)
+				fmt.Println()
+			}*/
+		fmt.Printf("%s\n", blockDevices)
+
+		mntInfo, errMntInfo := initializing.GetMountInfo()
+		ctrlaltgo.JamIfErr(errMntInfo)
+		fmt.Printf("\n")
+		for _, m := range mntInfo {
+			fmt.Printf("%s\n", m)
+		}
+
+		fmt.Printf("------ROOT--------\n")
+		listDir("/")
+		fmt.Printf("------BIN--------\n")
+		listDir("/bin")
+		checkExampleBinDirFile()
+		time.Sleep(time.Second * 3)
+	}
 	ctrlaltgo.JamIfErr(fmt.Errorf("end of program"))
 }

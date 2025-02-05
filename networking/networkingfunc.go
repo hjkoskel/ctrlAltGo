@@ -22,7 +22,8 @@ type IpSettings struct {
 	Gateway    net.IP //Goes to route
 	Address    string
 	DnsServers []net.IP
-	Expire     time.Time //If leased from DHCP
+	LeaseTime  time.Duration //Stays same
+	Expire     time.Time     //If leased from DHCP
 }
 
 func (p *IpSettings) ApplyToInterface(interfacename string, priority int) error {
@@ -67,12 +68,23 @@ func GetDHCP(hostname string, interfacename string) (IpSettings, error) {
 		Address:    lease.IP.String() + "/24",
 		DnsServers: lease.DNS,
 		Gateway:    lease.Router,
+		LeaseTime:  lease.RenewalTime,
+		Expire:     time.Now().Add(lease.RenewalTime),
 	}
+
 	if len(lease.Netmask) > 0 {
 		a := net.IPNet{IP: lease.IP, Mask: lease.Netmask}
 		result.Address = a.String()
 	}
 	return result, nil
+}
+
+func Link(interfacename string) (bool, error) {
+	link, errLink := netlink.LinkByName(interfacename)
+	if errLink != nil {
+		return false, errLink
+	}
+	return link.Attrs().OperState == netlink.OperUp, nil
 }
 
 func Carrier(interfacename string) (bool, error) {

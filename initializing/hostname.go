@@ -12,5 +12,6 @@ func SetHostname(hostname string) error {
 	if errHost != nil {
 		return errHost
 	}
+
 	return syscall.Sethostname(hn)
 }

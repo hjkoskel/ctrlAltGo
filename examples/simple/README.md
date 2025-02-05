@@ -66,3 +66,17 @@ arm_64bit=1
 disable_overscan=1
 arm_boost=1
 ~~~
+
+
+# Testing drives
+
+~~~sh
+qemu-img create -f qcow2 testdrive.img 100M
+~~~
+
+Lets mount and do something
+~~~sh
+sudo modprobe nbd max_part=8
+sudo qemu-nbd --connect=/dev/nbd0 testdrive.img
+~~~
+fdisk /dev/nbd0 -l
