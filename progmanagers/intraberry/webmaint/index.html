@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Device Maintenance</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/ractive"></script>
+</head>
+<body>
+  <div id="app">
+    <h1>Device Maintenance Operations</h1>
+ 
+ 
+
+  <script id="template" type="ractive/text">
+  
+    <div class="upload-section">
+      <h2>Upload Files</h2>
+
+      <form id="uploadForm">
+        <input type="file" id="progFileInput">
+        <button type="button" on-click="['doElfUpload', '/progTEMP']" id="uploadButtonTEMP">Upload TEMP</button>
+        <button type="button" on-click="['doElfUpload', '/prog']" id="uploadButton">Upload</button>
+      </form>
+
+      <button on-click="['doRestart']">Restart</button>
+      <button on-click="['doReboot']">Reboot</button>
+      
+     
+    </div>  
+    <div class="tabs">
+      <button class="tablink" on-click="['setTab', 'stdout']">Std out</button>
+      <button class="tablink" on-click="['setTab', 'stderr']">Std err</button>
+      <button class="tablink" on-click="['setTab', 'chrashmsg']">chrashmsg</button>
+    </div>
+    <div class="tabcontent">
+      {{#if page =="stdout"}}
+        {{>pageStdout}}
+      {{/if}}
+      {{#if page =="stderr"}}
+        {{>pageStderr}}
+      {{/if}}
+      {{#if page =="chrashmsg"}}
+        {{>pageChrashmsg}}
+      {{/if}}
+      
+    </div>
+
+</script>
+  </div>
+
+
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}
+
+h1, h2, h3 {
+  color: #333;
+}
+
+.upload-section {
+  margin-bottom: 20px;
+}
+
+.tabs {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+.tablink {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+}
+
+.tablink:hover {
+  background-color: #ddd;
+}
+
+.tablink.active {
+  background-color: #ccc;
+}
+
+.tabcontent {
+  
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+
+pre {
+  background-color: #f4f4f4;
+  padding: 10px;
+  border-radius: 5px;
+}
