@@ -143,6 +143,26 @@ func GetBlockDeviceNames() ([]string, error) {
 
 const UNKNOWSTRING string = "unknown"
 
+func (p *BlockDevices) HazPartition(partionName string) bool {
+	for _, blk := range *p {
+		for _, part := range blk.Partitions {
+			if part.Name == partionName {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (p *BlockDevices) IsQemu() bool { //Hack! TODO think about detection on some other place
+	for _, blk := range *p {
+		if strings.HasPrefix(blk.Vendor, "QEMU") {
+			return true
+		}
+	}
+	return false
+}
+
 // getBlockDevices parses information from /sys/block
 func GetBlockDevices() (BlockDevices, error) {
 	var devices []BlockDevice

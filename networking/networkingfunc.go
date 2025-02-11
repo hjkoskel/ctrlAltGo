@@ -26,6 +26,18 @@ type IpSettings struct {
 	Expire     time.Time     //If leased from DHCP
 }
 
+func (a IpSettings) String() string {
+	if len(a.Address) == 0 {
+		return "IPnotDefined"
+	}
+
+	dnslist := make([]string, len(a.DnsServers))
+	for i, d := range a.DnsServers {
+		dnslist[i] = d.String()
+	}
+	return fmt.Sprintf("IP:%s GW:%s DNS:[%s] lease:%s", a.Address, a.Gateway, strings.Join(dnslist, ","), a.LeaseTime)
+}
+
 func (p *IpSettings) ApplyToInterface(interfacename string, priority int) error {
 	errAddr := SetAddress(interfacename, p.Address)
 	if errAddr != nil {

@@ -17,3 +17,6 @@ The first line is dedicated to system status
 
 
 
+- kexec, change kenrnels on fly?
+
+- cleanup  errors %s -> %w , "new way"

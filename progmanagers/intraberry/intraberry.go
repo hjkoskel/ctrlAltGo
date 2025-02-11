@@ -29,11 +29,15 @@ import (
 	"github.com/hjkoskel/ctrlaltgo"
 	"github.com/hjkoskel/ctrlaltgo/initializing"
 	"github.com/hjkoskel/ctrlaltgo/networking"
+	"github.com/hjkoskel/ctrlaltgo/status"
 	"github.com/hjkoskel/timegopher"
 )
 
 const (
-	DEV_BOOTCARD  = "/dev/mmcblk0p1"
+	PARTITIONNAME_PRIMARY   = "mmcblk0p1"
+	PARTITIONNAME_SECONDARY = "sda1"
+
+	//Get by priority /dev/mmcblk0p1 or /dev/sda DEV_BOOTCARD  = "/dev/mmcblk0p1"
 	MNT_BOOTCARD  = "/bootcard"
 	PROGRAM       = "/bootcard/program"
 	TMPPROGRAM    = "/tmp/program"
@@ -76,14 +80,13 @@ func mainNetwork(hostname string, ipSettings *networking.IpSettings) error {
 
 	errUp := networking.SetLinkUp(INTERFACENAME, true)
 	ctrlaltgo.JamIfErr(errUp)
+	fmt.Printf("Checking carrier on %s ....", INTERFACENAME)
 	for {
-		fmt.Printf("Checking carrier on %s ....", INTERFACENAME)
 		haveCarr, errCarr := networking.Carrier(INTERFACENAME)
 		ctrlaltgo.JamIfErr(errCarr)
 		if haveCarr {
 			break
 		}
-		fmt.Printf(".... no carrier\n")
 	}
 	fmt.Printf("... have carrier\n")
 
@@ -253,6 +256,36 @@ func execApp(ctx context.Context, programFileName string, normalOut chan string,
 	return fmt.Errorf("program exitted wait nil err")
 }
 
+func getBootPartitionName(timeoutTime time.Duration) (string, error) {
+	tStart := time.Now()
+	for time.Since(tStart) < timeoutTime { //USB enumeration takes time
+		blockDevices, errBlockDevices := initializing.GetBlockDevices()
+		if errBlockDevices != nil {
+			return "", errBlockDevices
+		}
+
+		if len(blockDevices) == 0 {
+			fmt.Printf("no block devices yet!")
+			time.Sleep(time.Millisecond * 250)
+			continue // re-try
+		}
+		fmt.Printf("DEBUG: haz blck devices\n%s\n\n", blockDevices)
+
+		if blockDevices.IsQemu() {
+			return "", nil //TODO get drive by some other priority list?  hda?
+		}
+
+		prioritylist := []string{PARTITIONNAME_PRIMARY, PARTITIONNAME_SECONDARY}
+		for _, name := range prioritylist {
+			if blockDevices.HazPartition(name) {
+				return name, nil
+			}
+		}
+		time.Sleep(time.Second)
+	}
+	return "", fmt.Errorf("get boot partition timeout after %s", time.Since(tStart))
+}
+
 func main() {
 	if os.Getpid() != 1 {
 		fmt.Printf("This is initramfs program. Please run this as PID1\n")
@@ -264,15 +297,24 @@ func main() {
 	errMount := initializing.MountNormal()
 	ctrlaltgo.JamIfErr(errMount)
 
-	initializing.CreateAndMount([]initializing.MountCmd{
-		initializing.MountCmd{
-			Source: DEV_BOOTCARD,
-			Target: MNT_BOOTCARD,
-			FsType: "vfat",
-			//Flags  uintptr
-			//Data   string
-		},
-	})
+	bootPartitionName, errBootPartition := getBootPartitionName(time.Minute) //USB enumeration takes time
+	ctrlaltgo.JamIfErr(errBootPartition)
+
+	if len(bootPartitionName) == 0 {
+		fmt.Printf("Must be qemu without drive\n") //TODO detect when on qemu?
+		os.MkdirAll(MNT_BOOTCARD, 0777)
+	} else {
+		fmt.Printf("Using %s as boot partition\n", bootPartitionName)
+		initializing.CreateAndMount([]initializing.MountCmd{
+			initializing.MountCmd{
+				Source: "/dev/" + bootPartitionName,
+				Target: MNT_BOOTCARD,
+				FsType: "vfat",
+				//Flags  uintptr
+				//Data   string
+			},
+		})
+	}
 
 	hostname, _ := GetHostname(SETTINGSDIR) //Skip errors? run with default. TODO where report?
 	fmt.Printf("Hostname is %s\n", hostname)
@@ -312,14 +354,18 @@ func main() {
 
 	go func() {
 
-		manualEthSettings, _ := GetEthSettings(SETTINGSDIR)
+		manualEthSettings, errEthSettings := GetEthSettings(SETTINGSDIR)
+		ctrlaltgo.JamIfErr(errEthSettings)
+		if manualEthSettings == nil {
+			fmt.Printf("USE DHCP! on eth0\n")
+		} else {
+			fmt.Printf("\n\n--- NETWORKING --- %s\n", manualEthSettings)
+		}
 		networkFail := mainNetwork(hostname, manualEthSettings)
 		ctrlaltgo.JamIfErr(networkFail)
 	}()
 
 	//MNT_BOOTCARD
-	fmt.Printf("---Settings dir have have---\n")
-	listDir(path.Dir(SETTINGSDIR))
 
 	fmt.Printf("---Program dir have have---\n")
 	listDir(path.Dir(PROGRAM))
@@ -332,8 +378,25 @@ func main() {
 	progExecQueue <- PROGRAM //Initial value
 	go ExecOneProgram(progExecQueue, normalOut, errPrintout, progCrashQueue)
 
+	kernelMsgCh := make(chan status.KMsg, 100)
+	monKernel, errOpenKernel := status.OpenKernelMonitor(3000)
+	if errOpenKernel != nil {
+		fmt.Printf("open err %s\n", errOpenKernel)
+		return
+	}
+
+	go func() {
+		for {
+			errRead := monKernel.Read(kernelMsgCh)
+			if errRead != nil {
+				fmt.Printf("KERNEL READ ERR %s\n", errRead)
+			}
+			time.Sleep(time.Millisecond * 500)
+		}
+	}()
+
 	//Start server
-	errRunServer := MaintananceServer(progExecQueue, normalOut, errPrintout, progCrashQueue)
+	errRunServer := MaintananceServer(progExecQueue, normalOut, errPrintout, progCrashQueue, kernelMsgCh)
 	ctrlaltgo.JamIfErr(errRunServer)
 
 	ctrlaltgo.JamIfErr(fmt.Errorf("-- DONE --"))

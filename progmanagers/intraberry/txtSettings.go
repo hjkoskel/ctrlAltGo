@@ -6,6 +6,7 @@ Very crude
 package main
 
 import (
+	"fmt"
 	"net"
 	"os"
 	"path"
@@ -31,6 +32,40 @@ const (
 	DEFAULT_HOSTNAME = "intraberry"
 )
 
+//Load to map... TODO one way to operate or report and maybe change settings?
+
+type AllSettings struct {
+	Tz          *time.Location
+	Hostname    string
+	EthSettings *networking.IpSettings
+	NtpSettings timesync.NtpSync
+}
+
+func LoadAllSettings(dirname string) (AllSettings, error) {
+	result := AllSettings{}
+	var err error
+
+	result.Tz, err = GetTz(dirname)
+	if err != nil {
+		return result, fmt.Errorf("%s", err)
+	}
+
+	result.Hostname, err = GetHostname(dirname)
+	if err != nil {
+		return result, fmt.Errorf("%s", err)
+	}
+	result.EthSettings, err = GetEthSettings(dirname)
+	if err != nil {
+		return result, fmt.Errorf("%s", err)
+	}
+
+	result.NtpSettings, err = GetNtpSettings(dirname)
+	if err != nil {
+		return result, fmt.Errorf("%s", err)
+	}
+	return result, nil
+}
+
 func GetTz(dirname string) (*time.Location, error) {
 	tzFname := path.Join(dirname, TZFILENAME)
 	tzDefault, errTzDefault := time.LoadLocation(DEFAULT_TZ)
@@ -54,7 +89,11 @@ func GetTz(dirname string) (*time.Location, error) {
 }
 
 func GetHostname(dirname string) (string, error) {
-	byt, err := os.ReadFile(path.Join(dirname, HOSTFILENAME))
+	hostFname := path.Join(dirname, HOSTFILENAME)
+	if !FileExists(hostFname) {
+		return DEFAULT_HOSTNAME, nil
+	}
+	byt, err := os.ReadFile(hostFname)
 	if err != nil {
 		return DEFAULT_HOSTNAME, err
 	}
@@ -66,7 +105,7 @@ func GetHostname(dirname string) (string, error) {
 }
 
 func GetEthSettings(dirname string) (*networking.IpSettings, error) {
-	fnameIp := path.Join(dirname, ETH0FILE_IP)
+	fnameIp := path.Join(dirname, ETH0FILE_IP) //IF this is defined then others have to be found also!
 	if !FileExists(fnameIp) {
 		return nil, nil
 	}
@@ -96,7 +135,15 @@ func GetEthSettings(dirname string) (*networking.IpSettings, error) {
 		}
 		rows := strings.Split(string(byt), "\n")
 		for _, row := range rows {
-			result.DnsServers = append(result.DnsServers, net.ParseIP(strings.TrimSpace(row)))
+			s := strings.TrimSpace(row)
+			if len(s) == 0 {
+				continue
+			}
+			ipParsed := net.ParseIP(s)
+			if ipParsed == nil {
+				return &result, fmt.Errorf("error parsing DNS row:%s invalid ip number", row)
+			}
+			result.DnsServers = append(result.DnsServers, ipParsed)
 		}
 	} else {
 		result.DnsServers = []net.IP{net.ParseIP("8.8.8.8")}

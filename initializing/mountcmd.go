@@ -1,6 +1,7 @@
 package initializing
 
 import (
+	"fmt"
 	"os"
 	"syscall"
 )
@@ -11,6 +12,30 @@ type MountCmd struct {
 	FsType string
 	Flags  uintptr
 	Data   string
+}
+
+func reverseStrings(strings []string) []string {
+	news := make([]string, len(strings))
+	for i, j := 0, len(strings)-1; i <= j; i, j = i+1, j-1 {
+		news[i], news[j] = strings[j], strings[i]
+	}
+	return news
+}
+
+func UmountAll(mountpoints []string) error {
+	//Assume that list is mountin order. Lets reverse tahat
+	reversed := reverseStrings(mountpoints)
+
+	for _, mountpoint := range reversed {
+		if mountpoint == "/" {
+			continue
+		}
+		errUmount := syscall.Unmount(mountpoint, syscall.MNT_DETACH) //TODO FORCE?
+		if errUmount != nil {
+			return fmt.Errorf("error while umounting:%s  err:%s", mountpoint, errUmount)
+		}
+	}
+	return nil
 }
 
 func (p *MountCmd) CreateAndMount() error {

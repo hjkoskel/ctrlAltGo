@@ -19,6 +19,14 @@ type MountInfo struct {
 
 type MountInfoArr []MountInfo
 
+func (p *MountInfoArr) Mountpoints() []string {
+	result := make([]string, len(*p))
+	for i, m := range *p {
+		result[i] = m.MountPoint
+	}
+	return result
+}
+
 func (p *MountInfoArr) String() string {
 	var sb strings.Builder
 	for _, m := range *p {

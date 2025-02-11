@@ -114,7 +114,6 @@ func main() {
 		if haveCarr {
 			break
 		}
-		fmt.Printf(".... no carrier\n")
 	}
 	fmt.Printf("... have carrier\n")
 

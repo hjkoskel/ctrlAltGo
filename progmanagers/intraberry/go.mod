@@ -4,13 +4,23 @@ go 1.23.4
 
 require (
 	github.com/hjkoskel/ctrlaltgo v0.0.1
+	github.com/hjkoskel/ctrlaltgo/deployment v0.0.0-00010101000000-000000000000
 	github.com/hjkoskel/ctrlaltgo/initializing v0.0.0-20250205205237-be29a6b1167f
 	github.com/hjkoskel/ctrlaltgo/networking v0.0.0-20250205205237-be29a6b1167f
+	github.com/hjkoskel/ctrlaltgo/status v0.0.0-00010101000000-000000000000
 	github.com/hjkoskel/timegopher v0.0.2
 	github.com/hjkoskel/timegopher/timesync v0.0.0-20250112124711-4a8804e861a6
 )
 
+replace github.com/hjkoskel/ctrlaltgo => ../../
+
 replace github.com/hjkoskel/ctrlaltgo/initializing => ../../initializing
+
+replace github.com/hjkoskel/ctrlaltgo/networking => ../../networking
+
+replace github.com/hjkoskel/ctrlaltgo/status => ../../status
+
+replace github.com/hjkoskel/ctrlaltgo/deployment => ../../deployment
 
 require (
 	github.com/beevik/ntp v1.4.3 // indirect
