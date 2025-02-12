@@ -163,7 +163,6 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
 		byt, _ := json.MarshalIndent(mntInfo, "", " ")
 
 		w.Write(byt)
@@ -176,8 +175,7 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		byt, _ := json.MarshalIndent(blockDevices, "", " ")
-		w.Write(byt)
+		w.Write([]byte(blockDevices.String()))
 	})
 
 	http.HandleFunc("GET /procinfos", func(w http.ResponseWriter, r *http.Request) {
@@ -203,10 +201,64 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 		w.Write([]byte(usage.String()))
 	})
 
+	//Get environment
+	http.HandleFunc("GET /env", func(w http.ResponseWriter, r *http.Request) {
+		env, errEnv := initializing.GetEnvs()
+		if errEnv != nil {
+			w.Write([]byte(fmt.Sprintf("%s", errEnv)))
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.Write([]byte(env.String()))
+	})
+
+	//Text format?
+	http.HandleFunc("POST /env", func(w http.ResponseWriter, r *http.Request) {
+		byt, errBody := io.ReadAll(r.Body)
+		if errBody != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("%s", errBody)))
+			return
+		}
+
+		keystrings, errParse := initializing.ParseEnvs(string(byt))
+		if errParse != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("parse err %s, (400)", errParse)))
+			return
+		}
+
+		os.Clearenv()
+		errSet := keystrings.SetEnvs()
+		if errSet != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("error setting environment variables %s", errSet)))
+			return
+		}
+		env, errEnv := initializing.GetEnvs()
+		if errEnv != nil {
+			w.Write([]byte(fmt.Sprintf("%s", errEnv)))
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.Write([]byte(env.String()))
+	})
+
 	http.HandleFunc("GET /procstat", func(w http.ResponseWriter, r *http.Request) {
 		sta, errSta := status.GetProcStat()
 		if errSta != nil {
 			w.Write([]byte(fmt.Sprintf("error listing proc stat %s", errSta)))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		byt, _ := json.MarshalIndent(sta, "", " ")
+		w.Write(byt)
+	})
+
+	http.HandleFunc("GET /meminfo", func(w http.ResponseWriter, r *http.Request) {
+		sta, errSta := status.ReadMemInfo(status.MEMINFOFILE)
+		if errSta != nil {
+			w.Write([]byte(fmt.Sprintf("error getting meminfo %s", errSta)))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

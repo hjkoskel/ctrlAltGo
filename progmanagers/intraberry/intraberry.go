@@ -144,7 +144,7 @@ func ExecOneProgram(programQueue chan string, normalOut chan string, errPrintout
 			cancel()
 			wg.Wait() // Wait for the current program to exit
 		}
-
+		fmt.Printf("OS environment variables %#v", os.Environ())
 		for program == PAUSEPROG { //wait pause
 			fmt.Printf("ON PAUSE\n")
 			program = <-programQueue
@@ -158,6 +158,8 @@ func ExecOneProgram(programQueue chan string, normalOut chan string, errPrintout
 
 		// Start the new program
 		cmd = exec.CommandContext(ctx, program)
+		//Note: cmd env is nil uses os environ
+
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
 			errorsCh <- fmt.Errorf("error creating stdout pipe for %s: %v", program, err)

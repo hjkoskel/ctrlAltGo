@@ -38,6 +38,13 @@
       <button class="tablink" on-click="['setTab', 'stdout']">Std out</button>
       <button class="tablink" on-click="['setTab', 'stderr']">Std err</button>
       <button class="tablink" on-click="['setTab', 'chrashmsg']">chrashmsg</button>
+      <button class="tablink" on-click="['setTab', 'kmsg']">kmsg</button>
+      <button class="tablink" on-click="['setTab', 'env']">env</button>
+      <button class="tablink" on-click="['setTab', 'mounts']">mounts</button>
+      <button class="tablink" on-click="['setTab', 'blockdevices']">blockdevices</button>
+      <button class="tablink" on-click="['setTab', 'procstat']">procstat</button>
+      <button class="tablink" on-click="['setTab', 'mem']">mem</button>
+
     </div>
     <div class="tabcontent">
       {{#if page =="stdout"}}
@@ -49,7 +56,32 @@
       {{#if page =="chrashmsg"}}
         {{>pageChrashmsg}}
       {{/if}}
+
+      {{#if page =="env"}}
+        {{>pageEnv}}
+      {{/if}}
+
+      {{#if page =="kmsg"}}
+        {{>pageKmsg}}
+      {{/if}}
       
+      {{#if page=="mounts"}}
+      {{>pageMounts}}
+      {{/if}}
+
+      {{#if page=="blockdevices"}}
+      {{>pageBlockdevices}}
+      {{/if}}
+
+      {{#if page=="procstat"}}
+      {{>pageProcstat}}
+      {{/if}}
+
+      {{#if page=="mem"}}
+      {{>pageMem}}
+      {{/if}}
+      
+
     </div>
 
 </script>
