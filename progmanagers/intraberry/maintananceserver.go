@@ -7,12 +7,15 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/hjkoskel/ctrlaltgo"
 	"github.com/hjkoskel/ctrlaltgo/initializing"
@@ -72,6 +75,21 @@ func HandleProgramWrite(w http.ResponseWriter, r *http.Request, target string, q
 	fmt.Printf("Going to start %s to queue\n", target)
 	queue <- target
 	fmt.Fprint(w, "ack")
+}
+
+type FileBrowserViewData struct {
+	UpdatedTimeAndDate string
+	De                 status.DirectoryEntry
+	Browse             status.TreeOpening //Directory structure on side menu
+	PreviewText        string             //Allows to preview content on extra column
+}
+
+func (d FileBrowserViewData) SideTree() template.HTML {
+	var sb strings.Builder
+	sb.WriteString("<ul>\n")
+	sb.WriteString(d.Browse.ToUlList())
+	sb.WriteString("\n</ul>")
+	return template.HTML(sb.String())
 }
 
 func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch chan string, crashch chan error, kernelMsgCh chan status.KMsg) error {
@@ -152,8 +170,26 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 		}
 	})
 
+	http.HandleFunc("GET /cpuinfo", func(w http.ResponseWriter, r *http.Request) {
+		byt, errRead := os.ReadFile("/proc/cpuinfo")
+		if errRead != nil {
+			w.Write([]byte(errRead.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Write(byt)
+	})
+
 	http.HandleFunc("GET /cpu", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "todo cpu")
+		info, errCpu := initializing.GetCpuinfo("/proc/cpuinfo")
+		if errCpu != nil {
+			w.Write([]byte(fmt.Sprintf("errCPU %s\n", errCpu)))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		info.Commonize()
+		byt, _ := json.MarshalIndent(info, "", " ")
+		w.Write(byt)
 	})
 
 	http.HandleFunc("GET /mounts", func(w http.ResponseWriter, r *http.Request) {
@@ -176,6 +212,29 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 			return
 		}
 		w.Write([]byte(blockDevices.String()))
+	})
+
+	//procPartitions for testing... major and minor numbers are needed?
+	http.HandleFunc("GET /procpartitions", func(w http.ResponseWriter, r *http.Request) {
+		data, errParse := initializing.ParseProcPartitions()
+		if errParse != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("error parsin /proc/partitions %s", errParse)))
+			return
+		}
+		byt, _ := json.MarshalIndent(data, "", " ")
+		w.Write(byt)
+	})
+
+	http.HandleFunc("GET /procdevices", func(w http.ResponseWriter, r *http.Request) { //For debug/getting major numbers of devices
+		procdev, errProcdev := status.LoadProcDevices()
+		if errProcdev != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("error proc devices %s", errProcdev)))
+			return
+		}
+		byt, _ := json.MarshalIndent(procdev, "", " ")
+		w.Write(byt)
 	})
 
 	http.HandleFunc("GET /procinfos", func(w http.ResponseWriter, r *http.Request) {
@@ -314,6 +373,55 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 		}
 
 	})
+
+	http.HandleFunc("GET /browse/{fname...}", func(w http.ResponseWriter, r *http.Request) {
+		params, _ := url.ParseQuery(r.URL.RawQuery)
+		previewFile := params.Get("preview")
+
+		fname := r.PathValue("fname")
+		fileInfo, err := os.Stat(fname)
+
+		if err == nil {
+			if !fileInfo.IsDir() {
+				http.ServeFile(w, r, fname)
+			}
+		}
+		rootfilename := "/" + fname
+		dirEntry, _ := status.ReadDirectoryEntry(rootfilename, false)
+
+		//errTemplateExecute := basicDirHTMLTemplate.Execute(w,  dirEntry)
+		tNow := time.Now()
+
+		outData := FileBrowserViewData{
+			UpdatedTimeAndDate: fmt.Sprintf("%02d:%02d:%02d: %d.%d.%d", tNow.Hour(), tNow.Minute(), tNow.Second(), tNow.Day(), tNow.Month(), tNow.Year()),
+			De:                 dirEntry,
+			Browse:             status.ReadOpeningFromDir(fname)}
+		if len(previewFile) != 0 {
+			byt, _ := os.ReadFile(path.Join(rootfilename, previewFile))
+			if 0 < len(byt) {
+				outData.PreviewText = string(byt)
+			}
+		}
+
+		errTemplateExecute := basicDirHTMLTemplate.Execute(w, outData)
+		if errTemplateExecute != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("error executing template %s", errTemplateExecute)))
+			return
+		}
+	})
+
+	http.HandleFunc("GET /opentree/{fname...}", func(w http.ResponseWriter, r *http.Request) {
+		result := status.ReadOpeningFromDir(r.PathValue("fname"))
+		byt, _ := json.MarshalIndent(result, "", " ")
+		w.Write(byt)
+	})
+
+	errInit := initDirGenerator()
+	if errInit != nil {
+		return fmt.Errorf("dir template err init %w", errInit)
+
+	}
 
 	fmt.Printf("starting server on %v\n", SERVERTCPPORT)
 

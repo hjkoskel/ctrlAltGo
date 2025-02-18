@@ -16,6 +16,7 @@
   <script id="template" type="ractive/text">
   
     <div class="upload-section">
+      <a href="/browse">FILE BROWSER</a>
       <h2>Upload Files</h2>
 
       <form id="uploadForm">
@@ -44,6 +45,7 @@
       <button class="tablink" on-click="['setTab', 'blockdevices']">blockdevices</button>
       <button class="tablink" on-click="['setTab', 'procstat']">procstat</button>
       <button class="tablink" on-click="['setTab', 'mem']">mem</button>
+      <button class="tablink" on-click="['setTab', 'cpu']">cpu</button>
 
     </div>
     <div class="tabcontent">
@@ -79,6 +81,10 @@
 
       {{#if page=="mem"}}
       {{>pageMem}}
+      {{/if}}
+
+      {{#if page=="cpu"}}
+      {{>pageCpu}}
       {{/if}}
       
 

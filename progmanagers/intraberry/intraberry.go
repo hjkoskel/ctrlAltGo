@@ -337,8 +337,6 @@ func main() {
 		fmt.Printf("TIME before sync IS NOW %s\n", time.Now().In(tz))
 		ntpsync, _ := GetNtpSettings(SETTINGSDIR)
 
-		//time.Sleep(time.Second * 5000) //Catch kernel panic
-
 		for {
 			timeOffset, errNtp := ntpsync.GetOffset()
 			if errNtp != nil {

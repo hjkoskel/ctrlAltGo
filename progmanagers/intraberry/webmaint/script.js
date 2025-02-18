@@ -12,7 +12,25 @@ const ractive = new Ractive({
     pageStdout:"<h3>Stdout</h3><pre>{{stdout}}</pre>",
     pageStderr:"<h3>Stderr</h3><pre>{{stderr}}</pre>",
     pageChrashmsg:"<h3>Crash Messages</h3><pre>{{chrashmsg}}</pre>",
-    pageCpu:"<h3>CPU Load</h3><p>{{cpuLoad}}</p>",
+    pageCpu:`<h3>CPU</h3>
+    <table border>
+    {{#each cpu.cpukeys:keyindex}}
+      <tr>
+        <th>{{this}}</th>
+        {{#each cpu.Cores}}
+          <td>
+            {{this[cpu.cpukeys[keyindex]]}}
+          </td>
+        {{/each}}
+      </tr>
+    {{/each}}
+    </table>
+    <table border>
+      {{#each cpu.Common:key}}
+        <tr><th>{{key}}</th><td>{{this}}</td></tr>
+      {{/each}}
+    </table>
+    `,
     pageDisk:"<h3>Disk Status</h3><p>{{diskStatus}}</p>",
     pageEnv:"<h3>Environmental values</h3><textarea rows='30' cols='80' value={{env}}></textarea><button on-click=\"['setenv']\">SET envVariables</button> {{envFeedback}}",
     pageKmsg:"<h3>Kernel Message</h3><pre>{{kmsg}}</pre>",
@@ -103,13 +121,13 @@ function ajaxGET(url,fGotData){
   request.onload = function() {
     if(this.status>=200 && this.status<400){
       if(fGotData!=undefined){
+        let s=this.response
         try{
-          fGotData(JSON.parse(this.response));
-          return;
+          s=JSON.parse(this.response)
         }catch(e){
-          fGotData(this.response);
-          return
+          s=this.response
         }
+        fGotData(s);
       }
     }else{}
   };
@@ -239,6 +257,22 @@ ractive.on({
         ajaxGET("/meminfo",function(s){
           ractive.set("meminfo",s)
         })
+      break
+      case "cpu":
+        ajaxGET("/cpu",function(s){
+          let commonkeys={}
+          //console.log("DATA IS "+JSON.stringify(s))
+          for (let core of s.Cores){
+            //console.log("CORE is "+JSON.stringify(core))
+            for (let key in core){
+              //console.log("key="+key)
+              commonkeys[key]=1
+            }
+          }
+          s.cpukeys=Object.keys(commonkeys)
+          ractive.set("cpu",s)
+        })
+      break
     }
   }
 })
