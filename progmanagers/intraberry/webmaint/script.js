@@ -6,7 +6,8 @@ const ractive = new Ractive({
     page:"stdout",
     stdout: 'Waiting for output...',
     cpuLoad: 'Fetching CPU load...',
-    diskStatus: 'Fetching disk status...'
+    diskStatus: 'Fetching disk status...',
+    modulesavailable:[]
   },
   partials:{
     pageStdout:"<h3>Stdout</h3><pre>{{stdout}}</pre>",
@@ -112,7 +113,43 @@ const ractive = new Ractive({
       {{#each meminfo:varname}}
         <li><b>{{varname}}</b> {{this}}</li>
       {{/each}}
-    </ul>`
+    </ul>`,
+    pageDrv:`<h3>Kernel Drivers</h3>
+    <pre>{{modulemsg}}</pre>
+    <br>
+    <table border>
+    <tr>
+      <th>Name</th>
+      <th>State</th>
+      <th>Instances</th>
+      <th>Used</th>
+      <th>Size</th>
+      <th>Annotations</th>
+      <th>Unload</th>
+    </tr>
+    {{#each modules}}
+      <tr> 
+        <td>{{Name}}</td>
+        <td>{{State}}</td>
+        <td>{{Instances}}</td>
+        <td>
+          <ul>
+            {{#each UsedBy}}
+              <li>{{this}}</li>
+            {{/each}}
+          </ul>
+        </td>
+        <td>{{Size}}</td>
+        <td>{{Annotations}}</td>
+        <td><button on-click=\"['unloadmodule',Name]\">UNLOAD</button></td>
+      </tr>
+    {{/each}}
+    </table>
+    <h3>Modules available</h3>
+    {{#each modulesavailable as k}}
+      <button on-click=\"['loadmodule',k]\">{{this}}</button>
+    {{/each}}
+    `
   }
 });
 
@@ -198,6 +235,24 @@ ractive.on({
       console.log(s)
     })
   },
+  unloadmodule:function(a,name){
+    ajaxGET("/unloadmodule/"+name,function(a,s){
+      console.log(s)
+      ractive.set("modulemsg",s)
+      ajaxGET("/modules",function(s){
+        ractive.set("modules",s)
+      })
+    })
+  },
+  loadmodule:function(a,name){
+    ajaxGET("/loadmodule/"+name,function(a,s){
+      console.log(s)
+      ractive.set("modulemsg",s)
+      ajaxGET("/modules",function(s){
+        ractive.set("modules",s)
+      })
+    })
+  },
   setTab:function(a,pg){
     console.log("uus sivu "+pg)
     ractive.set("page",pg)
@@ -272,6 +327,15 @@ ractive.on({
           s.cpukeys=Object.keys(commonkeys)
           ractive.set("cpu",s)
         })
+        case "drv":
+          ajaxGET("/modules",function(s){
+            ractive.set("modules",s)
+          })
+          ajaxGET("/modulesavailable",function(lst){
+            ractive.set("modulesavailable",lst)
+          })
+
+        break
       break
     }
   }

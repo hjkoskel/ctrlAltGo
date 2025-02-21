@@ -20,6 +20,7 @@ import (
 	"github.com/hjkoskel/ctrlaltgo"
 	"github.com/hjkoskel/ctrlaltgo/initializing"
 	"github.com/hjkoskel/ctrlaltgo/status"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -317,12 +318,79 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 	http.HandleFunc("GET /meminfo", func(w http.ResponseWriter, r *http.Request) {
 		sta, errSta := status.ReadMemInfo(status.MEMINFOFILE)
 		if errSta != nil {
-			w.Write([]byte(fmt.Sprintf("error getting meminfo %s", errSta)))
 			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("error getting meminfo %s", errSta)))
 			return
 		}
 		byt, _ := json.MarshalIndent(sta, "", " ")
 		w.Write(byt)
+	})
+
+	http.HandleFunc("GET /modules", func(w http.ResponseWriter, r *http.Request) {
+		modu, errModu := status.ReadKernelModuleStates("/proc/modules")
+		if errModu != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("error getting meminfo %s", errModu)))
+			return
+		}
+		byt, errIdent := json.MarshalIndent(modu, "", " ")
+		if errIdent != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("err marshaling %s", errIdent)))
+			return
+		}
+		w.Write(byt)
+	})
+
+	http.HandleFunc("GET /modulesavailable", func(w http.ResponseWriter, r *http.Request) { //List available modules
+		dircontent, errDir := os.ReadDir(KERNELDRIVERDIR)
+		if errDir != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("error reading dir %s", errDir)))
+			//w.Write([]byte("[\"none\"]"))
+			return
+		}
+		names := []string{}
+		for _, f := range dircontent {
+			if f.IsDir() {
+				continue
+			}
+			if strings.HasSuffix(f.Name(), ".ko") { //TODO expand suffixes if when compression is supported
+				names = append(names, f.Name())
+			}
+		}
+		byt, _ := json.MarshalIndent(names, "", " ")
+		w.Write(byt)
+	})
+
+	http.HandleFunc("GET /loadmodule/{modulename}", func(w http.ResponseWriter, r *http.Request) {
+		modulePath := path.Join(KERNELDRIVERDIR, r.PathValue("modulename"))
+		fmt.Printf("going to load %s\n", modulePath)
+		byt, errRead := os.ReadFile(modulePath)
+		if errRead != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("file %s load fail err:%s", modulePath, errRead)))
+			return
+		}
+		errLoadKernelModule := unix.InitModule(byt, "")
+
+		//errLoadKernelModule := initializing.LoadKernelModule(modulePath, "")
+		if errLoadKernelModule != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("loading %s failed:%s", r.PathValue("modulename"), errLoadKernelModule)))
+			return
+		}
+		w.Write([]byte(fmt.Sprintf("LOADED %s", modulePath)))
+	})
+
+	http.HandleFunc("GET /unloadmodule/{modulename}", func(w http.ResponseWriter, r *http.Request) {
+		err := unix.DeleteModule(r.PathValue("modulename"), unix.O_NONBLOCK)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("unloading %s failed:%s", r.PathValue("modulename"), err)))
+			return
+		}
+		w.Write([]byte(fmt.Sprintf("UNLOADED %s", r.PathValue("modulename"))))
 	})
 
 	//TODO separe function when this works
@@ -384,6 +452,7 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 		if err == nil {
 			if !fileInfo.IsDir() {
 				http.ServeFile(w, r, fname)
+				return
 			}
 		}
 		rootfilename := "/" + fname

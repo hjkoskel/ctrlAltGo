@@ -38,11 +38,12 @@ const (
 	PARTITIONNAME_SECONDARY = "sda1"
 
 	//Get by priority /dev/mmcblk0p1 or /dev/sda DEV_BOOTCARD  = "/dev/mmcblk0p1"
-	MNT_BOOTCARD  = "/bootcard"
-	PROGRAM       = "/bootcard/program"
-	TMPPROGRAM    = "/tmp/program"
-	SETTINGSDIR   = MNT_BOOTCARD + "/intraberry"
-	INTERFACENAME = "eth0"
+	MNT_BOOTCARD    = "/bootcard"
+	PROGRAM         = "/bootcard/program"
+	KERNELDRIVERDIR = "/bootcard/modules/"
+	TMPPROGRAM      = "/tmp/program"
+	SETTINGSDIR     = MNT_BOOTCARD + "/intraberry"
+	INTERFACENAME   = "eth0"
 
 	PAUSEPROG = "STOP" //If program name is this, stops current and wait next. Prevents having binary in use while updating
 )

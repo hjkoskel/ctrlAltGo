@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Device Maintenance</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/ractive"></script>
+  <script src="ractive"></script>
 </head>
 <body>
   <div id="app">
@@ -46,6 +46,8 @@
       <button class="tablink" on-click="['setTab', 'procstat']">procstat</button>
       <button class="tablink" on-click="['setTab', 'mem']">mem</button>
       <button class="tablink" on-click="['setTab', 'cpu']">cpu</button>
+      <button class="tablink" on-click="['setTab', 'drv']">drv</button>
+
 
     </div>
     <div class="tabcontent">
@@ -87,6 +89,9 @@
       {{>pageCpu}}
       {{/if}}
       
+      {{#if page=="drv"}}
+      {{>pageDrv}}
+      {{/if}}
 
     </div>
 
