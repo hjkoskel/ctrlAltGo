@@ -1,6 +1,6 @@
 module intraberry
 
-go 1.23.4
+go 1.24.0
 
 require (
 	github.com/hjkoskel/ctrlaltgo v0.0.1
@@ -10,6 +10,7 @@ require (
 	github.com/hjkoskel/ctrlaltgo/status v0.0.0-00010101000000-000000000000
 	github.com/hjkoskel/timegopher v0.0.2
 	github.com/hjkoskel/timegopher/timesync v0.0.0-20250112124711-4a8804e861a6
+	golang.org/x/sys v0.20.0
 )
 
 replace github.com/hjkoskel/ctrlaltgo => ../../
@@ -34,5 +35,4 @@ require (
 	github.com/vishvananda/netns v0.0.4 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
 )
