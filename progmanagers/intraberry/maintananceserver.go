@@ -19,6 +19,7 @@ import (
 
 	"github.com/hjkoskel/ctrlaltgo"
 	"github.com/hjkoskel/ctrlaltgo/initializing"
+	"github.com/hjkoskel/ctrlaltgo/inputdev"
 	"github.com/hjkoskel/ctrlaltgo/status"
 	"golang.org/x/sys/unix"
 )
@@ -26,6 +27,9 @@ import (
 const (
 	SERVERTCPPORT = 4242
 )
+
+//go:embed i2cdevices_min.json
+var i2cDeviceDatabaseBytes []byte //I2CDeviceDatabase
 
 //go:embed webmaint
 var staticWebMainananceGui embed.FS
@@ -83,6 +87,8 @@ type FileBrowserViewData struct {
 	De                 status.DirectoryEntry
 	Browse             status.TreeOpening //Directory structure on side menu
 	PreviewText        string             //Allows to preview content on extra column
+	SelectedFileName   string
+	IsOneLineFile      bool
 }
 
 func (d FileBrowserViewData) SideTree() template.HTML {
@@ -107,6 +113,13 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 
 	fs := http.FileServer(http.FS(statifscontent))
 	http.Handle("/", fs)
+
+	//I2c data for translating device names
+	var i2cdevicedb I2CDeviceDatabase
+	errInternalI2CdbParseErr := json.Unmarshal(i2cDeviceDatabaseBytes, &i2cdevicedb)
+	if errInternalI2CdbParseErr != nil {
+		return fmt.Errorf("internal i2c database parse error %s", errInternalI2CdbParseErr)
+	}
 
 	go func() {
 		for s := range stdinCh { //TODO LIMIT ROW COUNT?
@@ -464,12 +477,15 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 		outData := FileBrowserViewData{
 			UpdatedTimeAndDate: fmt.Sprintf("%02d:%02d:%02d: %d.%d.%d", tNow.Hour(), tNow.Minute(), tNow.Second(), tNow.Day(), tNow.Month(), tNow.Year()),
 			De:                 dirEntry,
-			Browse:             status.ReadOpeningFromDir(fname)}
+			Browse:             status.ReadOpeningFromDir(fname),
+		}
 		if len(previewFile) != 0 {
-			byt, _ := os.ReadFile(path.Join(rootfilename, previewFile))
+			outData.SelectedFileName = path.Join(rootfilename, previewFile)
+			byt, _ := os.ReadFile(outData.SelectedFileName)
 			if 0 < len(byt) {
 				outData.PreviewText = string(byt)
 			}
+			outData.IsOneLineFile = len(strings.Split(strings.TrimSpace(outData.PreviewText), "\n")) < 2
 		}
 
 		errTemplateExecute := basicDirHTMLTemplate.Execute(w, outData)
@@ -484,6 +500,68 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 		result := status.ReadOpeningFromDir(r.PathValue("fname"))
 		byt, _ := json.MarshalIndent(result, "", " ")
 		w.Write(byt)
+	})
+
+	http.HandleFunc("GET /i2cscan/", func(w http.ResponseWriter, r *http.Request) {
+		buslist, err := ListI2CBusses()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+		resultbytes, _ := json.MarshalIndent(buslist, "", " ")
+		w.Write(resultbytes)
+	})
+
+	http.HandleFunc("GET /i2cscan/{devicefile}", func(w http.ResponseWriter, r *http.Request) { //List available modules
+		devfile := path.Join("/dev/", r.PathValue("devicefile"))
+		lst, lstInUse, errlst := ScanI2C(devfile)
+		if errlst != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("error reading %s err:%s", devfile, errlst)))
+			return
+		}
+		report := i2cdevicedb.CreateReport(lst, lstInUse)
+		byt, errMarsh := json.MarshalIndent(report, "", " ")
+		if errMarsh != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("marshal error %s", errMarsh)))
+			return
+		}
+		w.Write(byt)
+	})
+
+	http.HandleFunc("GET /inputdevices", func(w http.ResponseWriter, r *http.Request) {
+		devArr, errParse := inputdev.ParseDevicesFile(inputdev.INPUTDEVICESFILE)
+		if errParse != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("err parse devices file err:%s", &errParse)))
+		}
+		byt, _ := json.Marshal(devArr)
+		w.Write(byt)
+	})
+
+	http.HandleFunc("POST /writeSingleLineFile", func(w http.ResponseWriter, r *http.Request) {
+		errParseForm := r.ParseForm()
+		if errParseForm != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("error parsing form %s", errParseForm)))
+			return
+		}
+
+		// Retrieve form values
+		filename := r.FormValue("filename")
+		contentline := r.FormValue("contentline")
+		fmt.Printf("write to %s line:%s\n", filename, contentline)
+		errWrite := os.WriteFile(filename, []byte(contentline), 0666)
+		if errWrite != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("writing %s to %s failed err:%s", contentline, filename, errWrite)))
+			return
+		}
+
+		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
+
 	})
 
 	errInit := initDirGenerator()

@@ -156,15 +156,7 @@ const basicDirHTMLTemplateRAW = `
     {{range .De.DeviceFiles}}
         <span class="devtag"> {{.Name}}</span>
     {{end}}
-
-
     {{end}}
-
-
-
-
-
-
 
 
     {{if .De.NamedPipes}}
@@ -190,6 +182,17 @@ const basicDirHTMLTemplateRAW = `
     <div class="column">
         <pre>{{.PreviewText}}</pre>
     </div>
+    {{end}}
+
+    {{if .IsOneLineFile}}
+    {{if .SelectedFileName}}
+    <form action="/writeSingleLineFile" method="POST">
+        <input type="hidden" name="filename" value="{{.SelectedFileName}}">
+        <label for="contentline">Write one line to file {{.SelectedFileName}}</label><br>
+        <input type="text" id="contentline" name="contentline" value="{{.PreviewText}}"><br>
+        <button>WRITE</button>
+    </form>
+    {{end}}
     {{end}}
 
     </div>
