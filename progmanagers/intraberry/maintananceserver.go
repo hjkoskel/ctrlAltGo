@@ -557,7 +557,6 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 		if errWrite != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(fmt.Sprintf("writing %s to %s failed err:%s", contentline, filename, errWrite)))
-			return
 		}
 
 		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
