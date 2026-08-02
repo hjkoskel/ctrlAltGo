@@ -15,6 +15,10 @@ type ImageBGRA struct {
 func (i *ImageBGRA) GetRaw() []byte {
 	return i.Pix
 }
+func (i *ImageBGRA) SetRaw(raw []byte) error {
+	i.Pix = raw
+	return nil
+}
 
 func (i *ImageBGRA) Bounds() image.Rectangle { return i.Rect }
 func (i *ImageBGRA) ColorModel() color.Model { return color.RGBAModel }
@@ -42,6 +46,15 @@ func (i *ImageBGRA) SetRGBA(x, y int, c color.RGBA) {
 		return
 	}
 
+	n := i.PixOffset(x, y)
+	pix := i.Pix[n:]
+	pix[0] = c.B
+	pix[1] = c.G
+	pix[2] = c.R
+	pix[3] = c.A
+}
+
+func (i *ImageBGRA) SetRGBADanger(x, y int, c color.RGBA) {
 	n := i.PixOffset(x, y)
 	pix := i.Pix[n:]
 	pix[0] = c.B

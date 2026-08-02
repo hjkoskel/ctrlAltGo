@@ -242,3 +242,36 @@ func main() {
 
 	}
 }
+
+/*
+oading module mc.ko
+FYI load mc.ko error:file /bootcard/modules/mc.ko load fail err:open /bootcard/modules/mc.ko: no such file or directory
+loading module uvc.ko
+FYI load uvc.ko error:file /bootcard/modules/uvc.ko load fail err:open /bootcard/modules/uvc.ko: no such file or directory
+loading module videodev.ko
+FYI load videodev.ko error:file /bootcard/modules/videodev.ko load fail err:open /bootcard/modules/videodev.ko: no such file or directory
+loading module videobuf2-common.ko
+FYI load videobuf2-common.ko error:file /bootcard/modules/videobuf2-common.ko load fail err:open /bootcard/modules/videobuf2-common.ko: no such file or directory
+loading module videobuf2-v4l2.ko
+FYI load videobuf2-v4l2.ko error:file /bootcard/modules/videobuf2-v4l2.ko load fail err:open /bootcard/modules/videobuf2-v4l2.ko: no such file or directory
+loading module videobuf2-memops.ko
+FYI load videobuf2-memops.ko error:file /bootcard/modules/videobuf2-memops.ko load fail err:open /bootcard/modules/videobuf2-memops.ko: no such file or directory
+loading module videobuf2-vmalloc.ko
+FYI load videobuf2-vmalloc.ko error:file /bootcard/modules/videobuf2-vmalloc.ko load fail err:open /bootcard/modules/videobuf2-vmalloc.ko: no such file or directory
+loading module uvcvideo.ko
+FYI load uvcvideo.ko error:file /bootcard/modules/uvcvideo.ko load fail err:open /bootcard/modules/uvcvideo.ko: no such file or directory
+
+
+----
+
+mc.ko   /lib/modules/6.12.47+rpt-rpi-v8/kernel/drivers/media/mc/mc.ko.xz
+uvc.ko  /lib/modules/6.12.47+rpt-rpi-v8/kernel/drivers/media/common/uvc.ko.xz
+videodev.ko /lib/modules/6.12.47+rpt-rpi-v8/kernel/drivers/media/v4l2-core/videodev.ko.xz
+videobuf2-common.ko  /lib/modules/6.12.47+rpt-rpi-v8/kernel/drivers/media/common/videobuf2/videobuf2-common.ko.xz
+videobuf2-v4l2.ko  /lib/modules/6.12.47+rpt-rpi-v8/kernel/drivers/media/common/videobuf2/videobuf2-v4l2.ko.xz
+videobuf2-memops.ko /lib/modules/6.12.47+rpt-rpi-v8/kernel/drivers/media/common/videobuf2/videobuf2-memops.ko.xz
+videobuf2-vmalloc.ko  /lib/modules/6.12.47+rpt-rpi-v8/kernel/drivers/media/common/videobuf2/videobuf2-vmalloc.ko.xz
+uvcvideo.ko  /lib/modules/6.12.47+rpt-rpi-v8/kernel/drivers/media/usb/uvc/uvcvideo.ko.xz
+
+
+*/

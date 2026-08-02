@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -458,6 +459,7 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 	http.HandleFunc("GET /browse/{fname...}", func(w http.ResponseWriter, r *http.Request) {
 		params, _ := url.ParseQuery(r.URL.RawQuery)
 		previewFile := params.Get("preview")
+		jsondata := params.Get("jsondata")
 
 		fname := r.PathValue("fname")
 		fileInfo, err := os.Stat(fname)
@@ -486,6 +488,12 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 				outData.PreviewText = string(byt)
 			}
 			outData.IsOneLineFile = len(strings.Split(strings.TrimSpace(outData.PreviewText), "\n")) < 2
+		}
+
+		if jsondata != "" {
+			byt, _ := json.MarshalIndent(outData, "", " ")
+			w.Write(byt)
+			return
 		}
 
 		errTemplateExecute := basicDirHTMLTemplate.Execute(w, outData)
@@ -560,6 +568,23 @@ func MaintananceServer(programQueue chan string, stdinCh chan string, stderrch c
 		}
 
 		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
+	})
+
+	//HACK, used for development
+	http.HandleFunc("GET /noinitramfshack", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("COMMENTING OUT initramfs\n")
+		//CommentInitramfsInConfigtxt
+		fname := filepath.Join(MNT_BOOTCARD, "config.txt")
+
+		errCommentOut := initializing.CommentInitramfsInConfigFile(fname)
+
+		if errCommentOut != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("error commenting out initramfs from %s failed err:%s", fname, errCommentOut)))
+			return
+		}
+
+		w.Write([]byte("initramfs disabled!"))
 
 	})
 

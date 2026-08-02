@@ -120,6 +120,7 @@ type DirectoryEntry struct {
 	Links       []FileLinkEntry
 	NamedPipes  []FilePipeEntry
 	Sockets     []FileSocketEntry
+	Other       []FileLinkEntry
 
 	Errors []error
 }
@@ -145,6 +146,7 @@ func ReadDirectoryEntry(rootfilename string, recursive bool) (DirectoryEntry, []
 		DeviceFiles: []FileDeviceEntry{},
 		Files:       []FileEntry{},
 		Links:       []FileLinkEntry{},
+		Other:       []FileLinkEntry{},
 	}
 
 	errList := []error{} //Can contain multiple fails, missing access rights etc..
@@ -217,6 +219,14 @@ func ReadDirectoryEntry(rootfilename string, recursive bool) (DirectoryEntry, []
 			result.NamedPipes = append(result.NamedPipes, FilePipeEntry{Path: absName})
 			continue
 		}
+		//---other--
+		result.Files = append(result.Files, FileEntry{
+			Path:    absName,
+			Mode:    stat.Mode(),
+			Uid:     0,
+			Gid:     0,
+			ModTime: stat.ModTime(),
+			Size:    stat.Size()})
 	}
 	result.Errors = errList
 	return result, errList

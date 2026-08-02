@@ -42,8 +42,32 @@ func ClampWithRect(pt image.Point, rect image.Rectangle) image.Point {
 }
 
 const (
-	ABS_X KeyCode = 0x00
-	ABS_Y KeyCode = 0x01
+	ABS_X  KeyCode = 0x00
+	ABS_Y  KeyCode = 0x01
+	ABS_Z  KeyCode = 0x02
+	ABS_RX KeyCode = 0x03
+	/*	ABS_RY
+
+		EV_ABS 4
+
+		CH6
+
+		ABS_RZ
+
+		EV_ABS 5
+
+		CH7
+
+		ABS_THROTTLE
+
+		EV_ABS 6
+
+		CH8
+
+		ABS_RUDDER
+
+		EV_ABS 7
+	*/
 
 	ABS_MT_POSITION_X KeyCode = 0x35
 	ABS_MT_POSITION_Y KeyCode = 0x36

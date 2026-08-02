@@ -11,6 +11,7 @@ import (
 	"ctrlaltgo"
 	"fmt"
 	"initializing"
+	"networking"
 	"os"
 	"time"
 )
@@ -88,6 +89,14 @@ func main() {
 		fmt.Printf("\n")
 		for _, m := range mntInfo {
 			fmt.Printf("%s\n", m)
+		}
+
+		//Network
+		ifnames, errListIf := networking.ListInterfaceNames()
+		ctrlaltgo.JamIfErr(fmt.Errorf("error listing interfaces %s", errListIf))
+
+		for _, name := range ifnames {
+			fmt.Sprintf("%s", networking.PrintoutNetInterface(name)+"\n")
 		}
 
 		fmt.Printf("------ROOT--------\n")

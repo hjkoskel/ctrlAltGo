@@ -1,6 +1,6 @@
 module simplesrv
 
-go 1.23.2
+go 1.25.0
 
 require initializing v0.0.0
 
@@ -24,7 +24,7 @@ require (
 	github.com/vishvananda/netns v0.0.4 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/sys v0.44.0 // indirect
 )
 
 replace ctrlaltgo => ../../

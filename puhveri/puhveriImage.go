@@ -17,6 +17,7 @@ type PuhveriImage interface { //Implements image.Image and draw.Image
 	At(x, y int) color.Color
 	Set(x, y int, c color.Color)
 	GetRaw() []byte
+	SetRaw([]byte) error
 
 	//Few specialized functions for better performance (do color conversion once etc..)
 	Fill(area image.Rectangle, c color.Color)

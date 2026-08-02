@@ -297,6 +297,7 @@ func main() {
 	fmt.Printf("\n\n\n-- Intraberry --\n\n\n")
 
 	fmt.Printf("mounting normal set of dirs\n")
+	//errMount := initializing.MountNormalRaspberry()
 	errMount := initializing.MountNormal()
 	ctrlaltgo.JamIfErr(errMount)
 

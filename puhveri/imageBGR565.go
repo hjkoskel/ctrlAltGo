@@ -16,6 +16,11 @@ func (i *ImageBGR565) GetRaw() []byte {
 	return i.Pix
 }
 
+func (i *ImageBGR565) SetRaw(raw []byte) error {
+	i.Pix = raw
+	return nil
+}
+
 func (i *ImageBGR565) Bounds() image.Rectangle { return i.Rect }
 func (i *ImageBGR565) ColorModel() color.Model { return color.NRGBAModel }
 

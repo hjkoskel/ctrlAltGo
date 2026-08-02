@@ -4,14 +4,9 @@ function validating binary files
 package main
 
 import (
-	"debug/elf"
 	"fmt"
 	"io"
 	"os"
-	"path"
-	"strings"
-
-	"github.com/hjkoskel/ctrlaltgo/deployment"
 )
 
 /*
@@ -63,7 +58,7 @@ gzReader, err := gzip.NewReader(file)
 }*/
 
 //extractCPIOArchive(bytes.NewReader(binData), outputDir string)
-
+/*
 func validateInitramfs(reader io.Reader, wantedMachine elf.Machine) (bool, error) {
 	dirname, errMkdir := os.MkdirTemp("/tmp", "validate")
 	if errMkdir != nil {
@@ -86,10 +81,7 @@ func validateInitramfs(reader io.Reader, wantedMachine elf.Machine) (bool, error
 	}
 	namelist := []string{}
 	for _, entry := range entries {
-		/*
-			fmt.Printf("name is %s\n", entry.Name())
-			time.Sleep(time.Second * 20)
-		*/
+
 		if entry.Name() == "init" {
 			f, errOpen := os.Open(path.Join(dirname, entry.Name()))
 			if errOpen != nil {
@@ -110,6 +102,7 @@ func validateInitramfs(reader io.Reader, wantedMachine elf.Machine) (bool, error
 	return false, fmt.Errorf("initramfs not found in dir [%s]", strings.Join(namelist, ","))
 
 }
+*/
 
 // validateInitramfs checks if the initramfs file is valid for ARM64. Passes correct reader depending on is it gz zipped or not
 

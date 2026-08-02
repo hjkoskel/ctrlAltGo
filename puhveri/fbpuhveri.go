@@ -94,7 +94,6 @@ func (p *FbPuhveri) VarScreeninfo() (VarScreeninfo, error) {
 }
 
 func (p *FbPuhveri) GetBuffer() (PuhveriImage, error) { //Just new image in correct format
-
 	vr := p.visualRect()
 	pixbuf := make([]byte, vr.Dx()*vr.Dy()*int(p.vinfo.Bits_per_pixel)/8)
 	stride := int(p.finfo.Line_length)
@@ -107,9 +106,13 @@ func (p *FbPuhveri) GetBuffer() (PuhveriImage, error) { //Just new image in corr
 		}*/
 		return &ImageBGR565{Pix: pixbuf, Rect: vr, Stride: stride}, nil
 	}
-
 	return nil, fmt.Errorf("image with %v bits per pixel not supported", p.vinfo.Bits_per_pixel)
 }
+
+const (
+	PUHVERTYPE_RGBA   = 0
+	PUHVERTYPE_BGR565 = 1
+)
 
 func (p *FbPuhveri) UpdateScreenAreas(buf PuhveriImage, areas []image.Rectangle) error { //Update to screen area. If not areas
 

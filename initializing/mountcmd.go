@@ -39,8 +39,17 @@ func UmountAll(mountpoints []string) error {
 }
 
 func (p *MountCmd) CreateAndMount() error {
-	os.MkdirAll(p.Target, 0777)
-	return syscall.Mount(p.Source, p.Target, p.FsType, p.Flags, p.Data)
+	errMk := os.MkdirAll(p.Target, 0777)
+	if errMk != nil {
+		return fmt.Errorf("error creating dir %s err:%s", p.Target, errMk)
+	}
+	errMount := syscall.Mount(p.Source, p.Target, p.FsType, p.Flags, p.Data)
+	if errMount != nil {
+		return fmt.Errorf("mount err %s  source=%s, target=%s, fstype=%s, flags=%v, data=%s",
+			errMount, p.Source, p.Target, p.FsType, p.Flags, p.Data)
+	}
+
+	return nil
 }
 
 func CreateAndMount(cmds []MountCmd) error {
@@ -64,6 +73,17 @@ var MinimalMountCmds []MountCmd = []MountCmd{
 	MountCmd{Source: "sysfs", Target: "/sys", FsType: "sysfs", Flags: 0, Data: ""},
 }
 */
+
+func MountNormalRaspberry() error {
+	fmt.Printf("mounting raspberry disk...\n")
+	errRootMount := CreateAndMount([]MountCmd{{Source: "mmcblk0p2", Target: "/", FsType: "ext4", Flags: syscall.MS_NOATIME | syscall.MS_REMOUNT, Data: ""}})
+	if errRootMount != nil {
+		fmt.Printf("ROOT mount fail %s\n")
+		return errRootMount
+	}
+	fmt.Printf("normal mounts\n")
+	return MountNormal()
+}
 
 // MountNormal,
 func MountNormal() error {

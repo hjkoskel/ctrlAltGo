@@ -93,10 +93,26 @@ func (p *InputDeviceArr) GetDefaultKeyboards() InputDeviceArr {
 }
 
 func (p *InputDeviceArr) GetMices() InputDeviceArr {
+	/*
+		result := []InputDevice{}
+		for _, dev := range *p {
+			for _, hand := range dev.Handlers {
+				if strings.HasPrefix(hand, "mouse") {
+					result = append(result, dev)
+				}
+			}
+		}
+		return result
+	*/
+	return p.GetByHandlerPrefix("mouse")
+
+}
+
+func (p *InputDeviceArr) GetByHandlerPrefix(handlePrefix string) InputDeviceArr {
 	result := []InputDevice{}
 	for _, dev := range *p {
 		for _, hand := range dev.Handlers {
-			if strings.HasPrefix(hand, "mouse") {
+			if strings.HasPrefix(hand, handlePrefix) {
 				result = append(result, dev)
 			}
 		}

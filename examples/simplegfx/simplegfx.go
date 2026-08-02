@@ -119,6 +119,15 @@ func main() {
 		},
 	}
 
+	fpspos := BounceBlock{
+		X:     float64(bou.Dx()) / 5,
+		Y:     2 * float64(bou.Dy()) / 3,
+		Dx:    0.01,
+		Dy:    0.01,
+		Width: 10, Heigth: 10,
+		C: color.RGBA{R: 255, G: 0, B: 0, A: 255},
+	}
+
 	//Get font
 	monofont, errMono := truetype.Parse(gomono.TTF)
 	if errMono != nil {
@@ -141,11 +150,10 @@ func main() {
 			Dst:  imgBuffer,
 			Src:  textColorPic,
 			Face: monoface,
-			Dot:  fixed.P(2, 32),
+			Dot:  fixed.P(int(fpspos.X), int(fpspos.Y)),
 		}
-
+		fpspos.Step(dur, bou)
 		d.DrawString(fmt.Sprintf("fps:%.2f", 1/float64(dur.Seconds())))
-
 		tPrevSim = time.Now()
 		dev.UpdateScreenAreas(imgBuffer, []image.Rectangle{})
 	}
