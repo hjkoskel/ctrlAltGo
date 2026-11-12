@@ -12,6 +12,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -142,6 +143,147 @@ func HaveInterface(interfacename string) (bool, error) {
 			return true, nil
 		}
 	}
+	return false, nil
+}
+
+/*
+func InterfaceVidPid(interfacename string) (bool, error) {
+	haz, errHaz := HaveInterface(interfacename)
+
+	if errHaz != nil {
+		return false, fmt.Errorf("error testing for wireless interface %s, err:%s", interfacename, errHaz)
+	}
+	if !haz {
+		return false, fmt.Errorf("missing interface %s", interfacename)
+	}
+
+	deviceLinkName := filepath.Join("/sys/class/net", interfacename, "device")
+
+	fmt.Printf("deviceLinkName=%s\n", deviceLinkName)
+	evaluatedLink, errEvalLink := filepath.EvalSymlinks(deviceLinkName)
+	if errEvalLink != nil {
+		return false, fmt.Errorf("error eval %s", errEvalLink)
+	}
+}*/
+
+func readOneHexNumberFile(fname string) (int64, error) {
+	byt, err := os.ReadFile(fname)
+	if err != nil {
+		return 0, err
+	}
+	return strconv.ParseInt(strings.TrimSpace(string(byt)), 16, 64)
+}
+
+func ListInterfacesWithVidPid(vid uint16, pid uint16) ([]string, error) {
+	result := []string{}
+
+	interfArr, errInterfaces := net.Interfaces()
+	if errInterfaces != nil {
+		return nil, errInterfaces
+	}
+	for _, a := range interfArr {
+		vidNow, pidNow := InterfaceVidPid(a.Name)
+		if vidNow == vid && pid == pidNow {
+			result = append(result, a.Name)
+		}
+	}
+	return result, nil
+}
+
+func InterfaceVidPid(interfacename string) (uint16, uint16) {
+	// Resolve /sys/class/net/<iface>/device
+	path, err := filepath.EvalSymlinks("/sys/class/net/" + interfacename + "/device")
+	if err != nil {
+		return 0, 0
+	}
+	//fmt.Printf("WALKING PATH START %s\n", path)
+	// Walk up until we find idVendor/idProduct
+	for {
+		vendorFile := filepath.Join(path, "idVendor")
+		productFile := filepath.Join(path, "idProduct")
+
+		vid, errReadVid := readOneHexNumberFile(vendorFile)
+		pid, errReadPid := readOneHexNumberFile(productFile)
+
+		if errReadVid == nil && errReadPid == nil {
+			return uint16(vid), uint16(pid)
+		}
+
+		/*if _, err := os.Stat(vendorFile); err == nil {
+			v, _ := os.ReadFile(vendorFile)
+			p, _ := os.ReadFile(productFile)
+
+			return strings.TrimSpace(string(v)),
+				strings.TrimSpace(string(p)),
+				true
+		}*/
+
+		parent := filepath.Dir(path)
+		if parent == "/sys/devices" || path == parent {
+			break
+		}
+		path = parent
+		//fmt.Printf("ITER %s\n", path)
+	}
+
+	return 0, 0
+}
+
+func ListWirelessInterfaces() ([]string, error) {
+	result := []string{}
+
+	interfArr, errInterfaces := net.Interfaces()
+	if errInterfaces != nil {
+		return nil, errInterfaces
+	}
+	for _, a := range interfArr {
+		isWireless, errCheckWireless := InteraceIsWireless(a.Name)
+		if errCheckWireless != nil {
+			return result, fmt.Errorf("error checking is interface wireless: %s\n", errCheckWireless)
+		}
+		if isWireless {
+			result = append(result, a.Name)
+		}
+	}
+	return result, nil
+}
+
+func InteraceIsWireless(interfacename string) (bool, error) {
+	haz, errHaz := HaveInterface(interfacename)
+
+	if errHaz != nil {
+		return false, fmt.Errorf("error testing for wireless interface %s, err:%s", interfacename, errHaz)
+	}
+	if !haz {
+		return false, fmt.Errorf("missing interface %s", interfacename)
+	}
+
+	p := filepath.Join("/sys/class/net", interfacename)
+
+	// Most drivers
+	if _, err := os.Stat(filepath.Join(p, "wireless")); err == nil {
+		return true, nil
+	}
+
+	// Follow device symlink
+	device, err := filepath.EvalSymlinks(filepath.Join(p, "device"))
+	if err != nil {
+		return false, nil
+	}
+
+	// Walk upwards looking for ieee80211
+	for {
+		if _, err := os.Stat(filepath.Join(device, "ieee80211")); err == nil {
+			return true, nil
+		}
+
+		parent := filepath.Dir(device)
+		if parent == device {
+			break
+		}
+		device = parent
+	}
+
 	return false, nil
 }
 

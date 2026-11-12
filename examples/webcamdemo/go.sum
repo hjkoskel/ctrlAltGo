@@ -1,0 +1,6 @@
+github.com/hjkoskel/ctrlaltgo v0.0.1 h1:rWqsvp+JwSvEFQ1QNhIK3r2KvkZ3YwU1IyiG5I4iwuQ=
+github.com/hjkoskel/ctrlaltgo v0.0.1/go.mod h1:5Ho0jWbjjOjGYA6r1D7nHyoeTfImRBonPJ3t96vUT+A=
+github.com/peterhagelund/go-v4l2 v0.7.0 h1:AZwW6pZLgDXRNCcgpRatwYVOGHtkKD1K9bDN4aLuZZ0=
+github.com/peterhagelund/go-v4l2 v0.7.0/go.mod h1:6rR+cpBMNjAfwTQI5DOVhmhT7RxV3c+rCGZyOvpbZdk=
+golang.org/x/sys v0.28.0 h1:Fksou7UEQUWlKvIdsqzJmUmCX3cZuD2+P3XyyzwMhlA=
+golang.org/x/sys v0.28.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=

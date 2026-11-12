@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"time"
 
-	"puhveri"
+	"github.com/hjkoskel/ctrlaltgo/puhveri"
 
 	"github.com/hjkoskel/ctrlaltgo"
 	"github.com/hjkoskel/ctrlaltgo/initializing"

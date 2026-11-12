@@ -1,4 +1,4 @@
-module puhveri
+module github.com/hjkoskel/ctrlaltgo/puhveri
 
 go 1.24.0
 

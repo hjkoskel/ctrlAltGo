@@ -12,7 +12,7 @@ import (
 	"image"
 	"image/color"
 	"os"
-	"puhveri"
+	"github.com/hjkoskel/ctrlaltgo/puhveri"
 	"time"
 
 	"github.com/golang/freetype/truetype"

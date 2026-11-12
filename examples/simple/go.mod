@@ -2,9 +2,8 @@ module simple
 
 go 1.25.0
 
-require initializing v0.0.0
+require github.com/hjkoskel/ctrlaltgo/initializing v0.0.2
 
-replace initializing => ../../initializing
 
 require (
 	ctrlaltgo v0.0.0
